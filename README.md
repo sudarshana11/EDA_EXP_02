@@ -1,8 +1,8 @@
 # Experiment 2: Netflix Shows & Movies Analysis
 
 ```text
-Name: Akshaya N 
-Reg.No: 212223050003 
+Name: Sudarshana S
+Reg.No: 212223050054
 ```
 
 ## Aim
