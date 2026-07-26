@@ -1,49 +1,36 @@
-# Experiment 1: EDA in IPL Dataset
+# Experiment 2: Netflix Shows & Movies Analysis
 
 ```text
-Name:Sudarshana S
-Reg.No: 212223050054
+Name: Akshaya N 
+Reg.No: 212223050003 
 ```
 
 ## Aim
-To perform Exploratory Data Analysis (EDA) on the Indian Premier League (IPL) matches dataset to derive meaningful insights regarding match statistics, team performance, toss decisions, and venue popularity over various seasons.
-
-
-## Introduction
-Exploratory Data Analysis (EDA) is a crucial first step in understanding any dataset.  
-For the **IPL dataset**, EDA helps uncover patterns such as:
-
-- Whether winning the toss influences match outcome  
-- Which teams dominate across seasons  
-- Which venues host most matches  
-- Seasonal trends in number of matches  
-
-Using Python libraries like **Pandas**, **Matplotlib**, and **Seaborn**, these insights can be visualized effectively.
-
+To analyze the Netflix titles dataset to understand the distribution of content types (Movies vs. TV Shows), identify the top content-producing countries, and visualize the trends in content release years.
 
 ## Algorithm / Procedure
 
-1. **Import Libraries**  
-   - `pandas` for data handling  
-   - `matplotlib` and `seaborn` for visualization  
+1. **Load Data**  
+   - Import the `netflix_titles.csv` dataset using Pandas.
 
-2. **Load Dataset**  
-   - Load `matches.csv` into a DataFrame  
-   - Inspect dataset shape and first few rows  
+2. **Data Inspection**  
+   - Use `.head()`, `.info()`, and `.describe()` to understand the dataset structure and check for missing values.
 
-3. **Matches per Season Analysis**  
-   - Group by season  
-   - Plot match frequency  
+3. **Content Analysis**  
+   - Count the number of unique content types: `"Movie"` and `"TV Show"`.
 
-4. **Team Performance Analysis**  
-   - Count wins per team  
-   - Visualize top performers  
+4. **Country Analysis**  
+   - Handle missing values in the `country` column.  
+   - Split entries containing multiple countries (e.g., `"USA, UK"`) into individual rows.  
+   - Count occurrences to find the top contributing countries.
 
-5. **Toss Decision Analysis**  
-   - Analyze distribution of bat vs field decisions  
+5. **Trend Analysis**  
+   - Create a pivot table to aggregate the count of shows released per year, separated by type.
 
-6. **Venue Analysis**  
-   - Identify and plot top venues  
+6. **Visualization**  
+   - Plot a bar chart for content type distribution.  
+   - Plot a bar chart for content released per year (2000–2020).  
+   - Plot a line chart to show the growth trend over time.
 
 
 ## Program (Python)
@@ -55,68 +42,108 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # 1. Load Dataset
-matches = pd.read_csv('matches.csv')
-print("Dataset Shape:", matches.shape)
-print(matches.head())
+url = 'https://raw.githubusercontent.com/allenkong221/netflix-titles-dataset/main/netflix_titles.csv'
+df = pd.read_csv(url)
 
-# 2. Matches per Season
-season_counts = matches['season'].value_counts().sort_index()
-print("\nMatches per season:\n", season_counts)
+# 2. Inspect Data
+print(df.head())
+print(df.shape)
+print(df.info())
 
-plt.figure(figsize=(10, 5))
-sns.barplot(x=season_counts.index, y=season_counts.values, palette="viridis")
-plt.title("Number of Matches per Season")
-plt.xlabel("Season")
-plt.ylabel("Matches")
-plt.show()
+# 3. Content Type Analysis
+type_counts = df['type'].value_counts()
+print("\nCounts by type:\n", type_counts)
 
-# 3. Top 5 Winning Teams
-winner_counts = matches['winner'].value_counts().head(5)
-plt.figure(figsize=(10, 5))
-sns.barplot(x=winner_counts.values, y=winner_counts.index, palette="coolwarm")
-plt.title("Top 5 Winning Teams")
-plt.xlabel("Number of Wins")
-plt.show()
+# 4. Country Analysis (Preprocessing)
+df_country = df.dropna(subset=['country']).copy()
 
-# 4. Toss Decisions
-toss_counts = matches['toss_decision'].value_counts()
+# Split entries with multiple countries
+df_country['country_list'] = df_country['country'].str.split(r',\s*')
+df_exploded = df_country.explode('country_list')
+df_exploded['country_list'] = df_exploded['country_list'].str.strip()
+
+country_counts = df_exploded['country_list'].value_counts().reset_index()
+country_counts.columns = ['country', 'count']
+print("\nTop contributing countries:\n", country_counts.head(10))
+
+# 5. Pivot Table for Trends
+pivot = pd.pivot_table(
+    df,
+    index='release_year',
+    columns='type',
+    values='show_id',
+    aggfunc='count',
+    fill_value=0
+)
+
+# 6. Visualization
+sns.set_style("whitegrid")
+
+# Plot 1: Movies vs TV Shows
 plt.figure(figsize=(6, 4))
-sns.barplot(x=toss_counts.index, y=toss_counts.values, palette="pastel")
-plt.title("Toss Decision Distribution")
+sns.barplot(x=type_counts.index, y=type_counts.values, palette='pastel')
+plt.title("Count of Movies vs TV Shows")
+plt.xlabel("Type")
 plt.ylabel("Count")
+plt.tight_layout()
 plt.show()
 
-# 5. Top Venues
-venue_counts = matches['venue'].value_counts().head(5)
-plt.figure(figsize=(12, 6))
-sns.barplot(x=venue_counts.values, y=venue_counts.index, palette="magma")
-plt.title("Top 5 Venues Hosting Matches")
-plt.xlabel("Number of Matches")
+# Plot 2: Content by Release Year (Recent History)
+if 2000 in pivot.index:
+    years_to_plot = pivot.loc[2000:2020]
+else:
+    years_to_plot = pivot.iloc[-20:]
+
+years_to_plot.plot(kind='bar', figsize=(12, 6), stacked=True)
+plt.title("Count by Release Year and Type (2000-2020)")
+plt.xlabel("Release Year")
+plt.ylabel("Count")
+plt.legend(title="Type")
+plt.tight_layout()
 plt.show()
-```
+
+# Plot 3: Growth Trend Line
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=pivot)
+plt.title("Trend of Movies vs TV Shows Over Years")
+plt.xlabel("Release Year")
+plt.ylabel("Count")
+plt.legend(title='Type')
+plt.tight_layout()
+plt.show()
+````
 
 ## Output
+<img width="1680" height="1050" alt="1" src="https://github.com/user-attachments/assets/24df4906-0362-443c-a6fc-b265ec67c0e7" />
+<img width="1680" height="1050" alt="2" src="https://github.com/user-attachments/assets/251076eb-9a47-41f7-9046-08f222938f93" />
+<img width="1680" height="1050" alt="3" src="https://github.com/user-attachments/assets/0db21b32-0cf7-41c3-bc6b-4e6891b645c4" />
+<img width="1680" height="1050" alt="4" src="https://github.com/user-attachments/assets/d992a279-1fee-43de-b816-43c859722969" />
+<img width="1680" height="1050" alt="5" src="https://github.com/user-attachments/assets/1200c33c-6251-4267-9ae4-1a0ea2a1610b" />
+<img width="1680" height="1050" alt="6" src="https://github.com/user-attachments/assets/59d9ee5e-1f2b-4d7a-a853-d191e3b8eb2f" />
+(Visual outputs shown as bar charts and line charts in the referenced screenshots.)
 
-<img width="1680" height="1050" alt="1" src="https://github.com/user-attachments/assets/47f3edf4-1ab7-44a4-957e-a09143a66a9b" />
-<img width="1680" height="1050" alt="2" src="https://github.com/user-attachments/assets/c32236c6-e7ee-4cb6-9394-5aa46a6ecec2" />
-<img width="1680" height="1050" alt="3" src="https://github.com/user-attachments/assets/c56e36b0-7d28-4530-8792-7b0ced262468" />
-<img width="1680" height="1050" alt="4" src="https://github.com/user-attachments/assets/b7b154b7-fb85-4550-b0f6-910eaf3e4789" />
+## Inference
 
-> ## **Inference**
-> ---
-> ### **Season Density**
-> Match count varies across seasons, increasing during years featuring more franchises.
+> ### Inference
 >
-> ### **Dominant Teams**
-> Teams like **Mumbai Indians** and **Chennai Super Kings** consistently top the win charts, showing long-term dominance.
+> * **Dominance of Movies:**
+>   There are significantly more Movies than TV Shows in the Netflix library.
 >
-> ### **Toss Trends**
-> Captains prefer **Fielding first**, often due to the dew factor and the strategic advantage of chasing.
+> * **Geographical Leaders:**
+>   The United States is the largest producer of content, followed by India and the United Kingdom.
 >
-> ### **Venue Bias**
-> Venues such as **Eden Gardens** and **Wankhede Stadium** host a significantly higher number of matches.
+> * **Exponential Growth:**
+>   There was a massive surge in content production and acquisition starting around 2015–2016, correlating with the global expansion of streaming services.
+>
+> * **Recent Trends:**
+>   While movies have historically dominated, the gap between Movies and TV Shows has been narrowing in recent years as original series production has increased.
 
+---
 
 ## Result
-The Exploratory Data Analysis on the IPL dataset was successfully performed.
-Key insights on match distribution, team performance, toss decisions, and venue dominance were extracted and visualized using Python.
+
+The Netflix dataset was successfully analyzed to determine content distribution and trends.
+This analysis helps in understanding the global streaming landscape and can guide content planning and investment strategies.
+
+```
+```
